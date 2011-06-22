@@ -1,0 +1,45 @@
+name: CTF
+main: com.elmakers.mine.bukkit.plugins.CTF.CTFPlugin
+version: 0.01
+website: http://mine.elmakers.com
+author: NathanWolf + Jacob_
+description : Capture the flag for Bukkit
+commands:
+  newmap:
+    description: Create a new map
+    usage: newmap
+  newgame:
+    description: Create a new game
+    usage: newgame
+  silver:
+    description: Join the silver team
+    usage: silver
+  gold:
+    description: Join the gold team
+    usage: gold
+  status:
+    description: Get game status
+    usage: status
+  tc:
+    description: Team chat
+    usage: tc
+  ctf:
+    description: Get CTF help
+    usage: help
+permissions:
+  CTF:
+    description: CTF permissions
+    type: map
+    map:
+      commands:
+        description: CTF console command permissions
+        type: map
+        map:
+          newmap:
+            description: Player may create a new map
+            type: boolean
+            default: false
+          newgame:
+            description: Player may create a new game
+            type: boolean
+            default: false
