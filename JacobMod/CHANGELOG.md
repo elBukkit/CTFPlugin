@@ -1,5 +1,13 @@
 # CHANGELOG
 
+# 0.02
+
+ - Add necromancer class
+ - Clear inventory on quit
+ - Much more aggressive base clearing
+ - Combine return zone and flag
+ - Add auto-generated class signs
+
 # 0.01
 
 - Private project started with source from:

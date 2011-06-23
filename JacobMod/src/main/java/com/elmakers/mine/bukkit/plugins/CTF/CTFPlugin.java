@@ -8,6 +8,9 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Server;
 import org.bukkit.World;
+import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
+import org.bukkit.block.Sign;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event.Priority;
 import org.bukkit.event.Event.Type;
@@ -112,6 +115,12 @@ public class CTFPlugin extends JavaPlugin{
         engineerClass.addMaterial(Material.GLOWSTONE);
         engineerClass.addMaterial(Material.GLASS);
         addClass(engineerClass);
+        
+        CTFClass necroClass = new CTFClass("necromancer");
+        necroClass.addSpell(Material.BONE, "Disintegrate your target");
+        necroClass.addSpell(Material.PORTAL, "Create connected portals");
+        necroClass.addSpell(Material.PUMPKIN, "Summon a monster to attack your enemy");
+        addClass(necroClass);
     }
     
     public void addClass(CTFClass newClass)
@@ -172,76 +181,97 @@ public class CTFPlugin extends JavaPlugin{
         sSpawnZ = mapZ + 128;
         gSpawnZ = mapZ + 128;
 
-        sFlagX = mapX + 20;
-        gFlagX = mapX + 256 - 20;
-        sFlagZ = mapZ + 128 + 8;
-        gFlagZ = mapZ + 128 + 8;
+        sFlagX = mapX + 12;
+        gFlagX = mapX + 256 - 12;
+        sFlagZ = mapZ + 128;
+        gFlagZ = mapZ + 128;
 
-        sZoneX = mapX + 20;
-        gZoneX = mapX + 256 - 20;
-        sZoneZ = mapZ + 128 - 8;
-        gZoneZ = mapZ + 128 - 8;
+        sZoneX = mapX + 12;
+        gZoneX = mapX + 256 - 12;
+        sZoneZ = mapZ + 128;
+        gZoneZ = mapZ + 128;
         
-        for(int y = 126; y >= 0; y--)
+        // hard-coding to sea level for now!
+        int seaLevel = 63;
+        
+        sSpawnY = seaLevel + 2;
+        gSpawnY = seaLevel + 2;
+        sFlagY = seaLevel + 4;
+        gFlagY = seaLevel + 4;
+        sZoneY = seaLevel + 3;
+        gZoneY = seaLevel + 3;
+        
+        for (int x = -3; x < 12; x++)
         {
-            int b = world.getBlockAt(sSpawnX, y, sSpawnZ).getTypeId();
-            if(b != 0 && b != 18 && b != 17)
+            for (int z = -4; z < 4; z++)
             {
-                sSpawnY = y + 2;
-                break;
-            }
-        }
-        for(int y = 126; y >= 0; y--)
-        {
-            int b = world.getBlockAt(gSpawnX, y, gSpawnZ).getTypeId();
-            if(b != 0 && b != 18 && b != 17)
-            {
-                gSpawnY = y + 2;
-                break;
-            }
-        }
-
-        for(int y = 126; y >= 0; y--)
-        {
-            int b = world.getBlockAt(sFlagX, y, sFlagZ).getTypeId();
-            if(b != 0 && b != 42 && b != 7 && b != 18 && b != 17)
-            {
-                sFlagY = y + 3;
-                break;
-            }
-        }
-        for(int y = 126; y >= 0; y--)
-        {
-            int b = world.getBlockAt(gFlagX, y, gFlagZ).getTypeId();
-            if(b != 0 && b != 41 && b != 7 && b != 18 && b != 17)
-            {
-                gFlagY = y + 3;
-                break;
+                for (int y = -2; y < 6; y++)
+                {
+                    // gold base clearing and floor
+                    Block block = world.getBlockAt(gSpawnX - x, gSpawnY + y, gSpawnZ + z);
+                    block.setType(y == -2 ? Material.BEDROCK : Material.AIR);
+                    
+                    // silver base clearing and floor
+                    block = world.getBlockAt(sSpawnX + x, sSpawnY + y, sSpawnZ + z);
+                    block.setType(y == -2 ? Material.BEDROCK : Material.AIR);
+                }
             }
         }
 
-        for(int y = 126; y >= 0; y--)
-        {
-            int b = world.getBlockAt(sZoneX, y, sZoneZ).getTypeId();
-            if(b != 0 && b != 49 && b != 18 && b != 17)
-            {
-                sZoneY = y + 1;
-                break;
-            }
-        }
-        for(int y = 126; y >= 0; y--)
-        {
-            int b = world.getBlockAt(gZoneX, y, gZoneZ).getTypeId();
-            if(b != 0 && b != 49 && b != 18 && b != 17)
-            {
-                gZoneY = y + 1;
-                break;
-            }
-        }
-        placeSilverFlag();
-        placeGoldFlag();
+        drawSquare(sFlagX, sFlagY - 2, sFlagZ, 1);
+        drawSquare(gFlagX, gFlagY - 2, gFlagZ, 1);
+        drawSquare(sFlagX, sFlagY - 3, sFlagZ, 2);
+        drawSquare(gFlagX, gFlagY - 3, gFlagZ, 2);
         world.getBlockAt(sZoneX, sZoneY, sZoneZ).setType(Material.OBSIDIAN);
         world.getBlockAt(gZoneX, gZoneY, gZoneZ).setType(Material.OBSIDIAN);
+        placeSilverFlag();
+        placeGoldFlag();
+        
+        // Set up class signs
+        int sSignX = mapX + 2;
+        int gSignX = mapX + 256 - 2;
+        int sSignZ = mapZ + 128;
+        int gSignZ = mapZ + 128;
+        int sSignY = sSpawnY;
+        int gSignY = gSpawnY;
+        int classCount = ctfClasses.values().size();
+        sSignZ = sSignZ - classCount / 2;
+        gSignZ = gSignZ - classCount / 2;
+        for (CTFClass ctfClass : ctfClasses.values())
+        {
+            String className = ctfClass.getName();
+            
+            // Silver base
+            Block signBlock = world.getBlockAt(sSignX, sSignY, sSignZ);
+            Block wall = world.getBlockAt(sSignX - 1, sSignY, sSignZ++);
+            wall.setType(Material.BEDROCK);
+            wall = wall.getFace(BlockFace.DOWN);
+            wall.setType(Material.BEDROCK);
+            
+            signBlock.setType(Material.WALL_SIGN);
+            signBlock.setData((byte)5);
+            if (signBlock.getState() instanceof Sign)
+            {
+                Sign sign = (Sign)signBlock.getState();
+                sign.setLine(0, className);
+            }
+            
+           // Gold base
+           signBlock = world.getBlockAt(gSignX, gSignY, gSignZ);
+           wall = world.getBlockAt(gSignX + 1, gSignY, gSignZ++);
+           wall.setType(Material.BEDROCK);
+           wall = wall.getFace(BlockFace.DOWN);
+           wall.setType(Material.BEDROCK);
+           
+           signBlock.setType(Material.WALL_SIGN);
+           signBlock.setData((byte)4);  
+           if (signBlock.getState() instanceof Sign)
+           {
+               Sign sign = (Sign)signBlock.getState();
+               sign.setLine(0, className);
+           }
+        }
+ 
         spawnsDone = true;
     }
 
@@ -250,25 +280,7 @@ public class CTFPlugin extends JavaPlugin{
         server.broadcastMessage("Generating map...");
 
         initSpawns();
-
-        drawSquare(sSpawnX, sSpawnY - 2, sSpawnZ, 1);
-        drawSquare(gSpawnX, gSpawnY - 2, gSpawnZ, 1);
-
-        drawSquare(sZoneX, sZoneY, sZoneZ, 1);
-        world.getBlockAt(sZoneX, sZoneY, sZoneZ).setTypeId(0);
-        drawSquare(sZoneX, sZoneY - 1, sZoneZ, 1);
-        drawSquare(gZoneX, gZoneY, gZoneZ, 1);
-        world.getBlockAt(gZoneX, gZoneY, gZoneZ).setTypeId(0);
-        drawSquare(gZoneX, gZoneY - 1, gZoneZ, 1);
-
-        drawSquare(sFlagX, sFlagY - 2, sFlagZ, 1);
-        world.getBlockAt(sFlagX, sFlagY, sFlagZ).setTypeId(42);
-        world.getBlockAt(sFlagX, sFlagY - 1, sFlagZ).setTypeId(7);
-
-        drawSquare(gFlagX, gFlagY - 2, gFlagZ, 1);
-        world.getBlockAt(gFlagX, gFlagY, gFlagZ).setTypeId(41);
-        world.getBlockAt(gFlagX, gFlagY - 1, gFlagZ).setTypeId(7);
-
+        
         for(int z = mapZ; z < mapZ + 256; z++)
         {
             for(int y = 126; y >= 0; y--)
@@ -313,7 +325,6 @@ public class CTFPlugin extends JavaPlugin{
             }
         }
 
-        server.broadcastMessage("Say /silver or /gold to join a team");
         System.err.println("Done preparing map");
     }
     public void showScore()
@@ -352,7 +363,14 @@ public class CTFPlugin extends JavaPlugin{
             playerClass = defaultClass;
             playerClasses.put(player, defaultClass);
         }
-        playerClass.resupply(player);
+        if (id != -1)
+        {
+            playerClass.resupply(player);
+        }
+        else
+        {
+            player.getInventory().clear();
+        }
         String name = null;
         if(id == 0)
         {

@@ -1,6 +1,6 @@
 name: CTF
 main: com.elmakers.mine.bukkit.plugins.CTF.CTFPlugin
-version: 0.01
+version: 0.02
 website: http://mine.elmakers.com
 author: NathanWolf + Jacob_
 description : Capture the flag for Bukkit
