@@ -33,6 +33,7 @@ public class CTFPlayerListener extends PlayerListener{
         Integer teamId = ctf.playerTeams.get(event.getPlayer());
         if (teamId != null && teamId != -1)
         {
+            event.getItem().remove();
             event.setCancelled(true);
         }
     }
