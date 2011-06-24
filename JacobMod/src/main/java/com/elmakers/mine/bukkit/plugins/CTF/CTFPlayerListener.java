@@ -1,10 +1,13 @@
 package com.elmakers.mine.bukkit.plugins.CTF;
 
 
+import net.minecraft.server.InventoryPlayer;
+
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
 import org.bukkit.block.Sign;
+import org.bukkit.craftbukkit.inventory.CraftInventoryPlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerChatEvent;
@@ -12,6 +15,7 @@ import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerListener;
+import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerPickupItemEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.scheduler.BukkitScheduler;
@@ -368,6 +372,34 @@ public class CTFPlayerListener extends PlayerListener{
                     ctf.placeSilverFlag();
                 }
             }
+        }
+    }
+    @Override
+    public void onPlayerMove(PlayerMoveEvent event)
+    {
+        Player p = event.getPlayer();
+        int x = p.getLocation().getBlockX();
+        int z = p.getLocation().getBlockZ();
+        if (ctf.isInArena(x, z))
+        {
+            Integer team = ctf.playerTeams.get(event.getPlayer());
+            if (team == null || team == -1) return;
+            
+            InventoryPlayer inventory = ((CraftInventoryPlayer)p.getInventory()).getInventory();
+            if (ctf.isInBase(x, z))
+            {
+                if (inventory.itemInHandIndex != 9)
+                {
+                    inventory.itemInHandIndex = 9;
+                }
+            }
+           else
+           {
+               if (inventory.itemInHandIndex != 0)
+               {
+                   inventory.itemInHandIndex = 0;
+               }
+           }
         }
     }
 }

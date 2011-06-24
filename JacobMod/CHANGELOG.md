@@ -1,5 +1,10 @@
 # CHANGELOG
 
+# 0.03
+
+ - Switch away from the wand when in base.
+ - Add torches to base, over signs
+
 # 0.02
 
  - Add necromancer class

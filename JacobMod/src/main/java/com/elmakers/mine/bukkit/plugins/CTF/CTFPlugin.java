@@ -1,6 +1,7 @@
 package com.elmakers.mine.bukkit.plugins.CTF;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.logging.Logger;
 
 import org.bukkit.ChatColor;
@@ -11,6 +12,8 @@ import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.Sign;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event.Priority;
 import org.bukkit.event.Event.Type;
@@ -31,8 +34,8 @@ public class CTFPlugin extends JavaPlugin{
     
     private Server server;
     private World world = null;
-    private int mapZ = 0;
     public boolean spawnsDone = false;
+    public int mapZ = 0;
     public int mapX = 0;
     
     public int sSpawnX;
@@ -244,9 +247,11 @@ public class CTFPlugin extends JavaPlugin{
             // Silver base
             Block signBlock = world.getBlockAt(sSignX, sSignY, sSignZ);
             Block wall = world.getBlockAt(sSignX - 1, sSignY, sSignZ++);
+            Block glowWall = wall.getFace(BlockFace.UP);
             wall.setType(Material.BEDROCK);
             wall = wall.getFace(BlockFace.DOWN);
             wall.setType(Material.BEDROCK);
+            glowWall.setType(Material.GLOWSTONE);
             
             signBlock.setType(Material.WALL_SIGN);
             signBlock.setData((byte)5);
@@ -270,6 +275,22 @@ public class CTFPlugin extends JavaPlugin{
                Sign sign = (Sign)signBlock.getState();
                sign.setLine(0, className);
            }
+        }
+
+        // Clean up any items, arrows, etc laying around.
+        List<Entity> entities = world.getEntities();
+        for (Entity entity : entities)
+        {
+            if (!(entity instanceof LivingEntity))
+            {
+                int x = entity.getLocation().getBlockX();
+                int z = entity.getLocation().getBlockZ();
+                
+                if (isInArena(x, z))
+                {
+                    entity.remove();
+                }
+            }
         }
  
         spawnsDone = true;
@@ -324,9 +345,24 @@ public class CTFPlugin extends JavaPlugin{
                 world.getBlockAt(x, y, mapZ + 256).setTypeId(7);
             }
         }
-
+        
         System.err.println("Done preparing map");
     }
+    
+    public boolean isInArena(int x, int z)
+    {
+        return (x >= mapX && x <= mapX + 256 && z >= mapZ && z <= mapZ + 256);
+    }
+    
+    public boolean isInBase(int x, int z)
+    {
+        return
+        (
+            (x >= gSpawnX - 12 && x <= gSpawnX + 3 && z >= gSpawnZ - 4 && z <= gSpawnZ + 4) 
+        ||  (x >= sSpawnX - 3 && x <= sSpawnX + 12 && z >= sSpawnZ - 4 && z <= sSpawnZ + 4)
+        );
+    }
+    
     public void showScore()
     {
         server.broadcastMessage("- "+ChatColor.GREEN+"Current score: Silver has "+sCaptures+" captures; gold has "+gCaptures+" captures.");
@@ -404,7 +440,8 @@ public class CTFPlugin extends JavaPlugin{
         server.getPluginManager().registerEvent(Type.ENTITY_DAMAGE, entityListener, Priority.High, this);
         server.getPluginManager().registerEvent(Type.ENTITY_DEATH, entityListener, Priority.High, this);
         server.getPluginManager().registerEvent(Type.PLAYER_PICKUP_ITEM, playerListener, Priority.High, this);
-        
+        server.getPluginManager().registerEvent(Type.PLAYER_MOVE, playerListener, Priority.Normal, this);
+               
         PluginDescriptionFile pdfFile = this.getDescription();
         Logger.getLogger("Minecraft").info(pdfFile.getName() + " version " + pdfFile.getVersion() + " is enabled");
     }
